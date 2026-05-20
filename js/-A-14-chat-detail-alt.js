@@ -1770,6 +1770,60 @@ function triggerAI(){
         apiMessages.push({role:'user',content:userText});
     }
 
+    // 导演卡片强化：检查最近是否有未被 AI 回应过的导演指令，在末尾再次强调
+    (function(){
+        var convMsgs=conversations[currentEntId]||[];
+        var lastDcIdx=-1;
+        var lastDcText='';
+        var lastDcType='';
+        var lastAiIdx=-1;
+        // 从后往前找最近的导演卡片和最近的 AI 回复
+        for(var di=convMsgs.length-1;di>=0;di--){
+            if(convMsgs[di].role==='assistant'&&lastAiIdx===-1){lastAiIdx=di;}
+            if(convMsgs[di].role==='info'&&lastDcIdx===-1){
+                var _dt=convMsgs[di].text||'';
+                var _dcM=_dt.match(/^::(NARRATOR_INJECT|ACTION_INJECT|CORRECTION_OVERRIDE)::\{[^}]*\}::\s*([\s\S]*)$/);
+                if(_dcM){
+                    lastDcIdx=di;
+                    var _dcTypeMap={'NARRATOR_INJECT':'旁白','ACTION_INJECT':'动作','CORRECTION_OVERRIDE':'纠错'};
+                    lastDcType=_dcTypeMap[_dcM[1]]||'旁白';
+                    var _dcRaw=_dcM[2].trim();
+                    if(_dcRaw.indexOf('|||LAZY|||')!==-1){_dcRaw=_dcRaw.split('|||LAZY|||')[0].trim();}
+                    lastDcText=_dcRaw;
+                }
+            }
+            if(lastDcIdx!==-1&&lastAiIdx!==-1)break;
+        }
+        // 如果最近的导演卡片在最近的 AI 回复之后（即 AI 还没回应过这条指令），强化提醒
+        if(lastDcIdx!==-1&&lastDcIdx>lastAiIdx&&lastDcText){
+            var dcReminder='';
+            if(lastDcType==='旁白'){
+                dcReminder='[⚠️ URGENT STAGE DIRECTION — YOU MUST OBEY THIS IN YOUR VERY NEXT REPLY]\nThe director has set the following scene/narration. You MUST reflect this in your next response:\n\n「'+lastDcText+'」\n\nRequirements:\n- Your reply must naturally incorporate or react to this scene description.\n- Do NOT ignore it. Do NOT contradict it.\n- Do NOT repeat it verbatim — weave it into your behavior, mood, dialogue, or narration naturally.\n- This takes priority over your default behavior for this one reply.';
+            }else if(lastDcType==='动作'){
+                dcReminder='[⚠️ URGENT ACTION DIRECTIVE — YOU MUST REACT TO THIS IMMEDIATELY]\nThe user\'s character just performed the following action. You MUST acknowledge and react to it in your very next reply:\n\n「'+lastDcText+'」\n\nRequirements:\n- You MUST show awareness that this action happened.\n- React naturally in character — surprised, pleased, confused, whatever fits.\n- Do NOT ignore it. Do NOT act as if nothing happened.\n- Your physical/emotional state should be affected by this action.\n- This is NOT optional. Failure to react = broken roleplay.';
+            }else if(lastDcType==='纠错'){
+                dcReminder='[⚠️ CRITICAL CORRECTION — ABSOLUTE PRIORITY]\nYour previous response had an error. The director has issued a correction that you MUST follow starting from your very next reply:\n\n「'+lastDcText+'」\n\nRequirements:\n- Silently comply. Do NOT apologize or acknowledge the correction in-character.\n- Do NOT say "好的我明白了" or anything meta.\n- Simply adjust your behavior/tone/content as instructed, seamlessly.\n- Act as if your previous (wrong) response never happened.\n- This correction has ABSOLUTE priority over all other behavioral rules.';
+            }
+            if(dcReminder){
+                apiMessages.push({role:'user',content:dcReminder});
+                apiMessages.push({role:'assistant',content:'understood.'});
+            }
+        }
+    })();
+
+    // 旁白模式：在最末尾注入强制提醒（紧贴 AI 回复位置，优先级最高）
+    (function(){
+        var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}
+        var _nMin=nc.minLen||3;var _nMax=nc.maxLen||80;
+        if(nc.on){
+            apiMessages.push({role:'user',content:'[SYSTEM REMINDER — NARRATION MODE IS ON]\n⚠️ Your next reply MUST contain narration tags. This is mandatory, not optional.\n\nFormat: [♪♫]narration text[/♪♫]\n\nRules you MUST follow RIGHT NOW:\n1. Include at least 1-3 narration segments interspersed with your dialogue lines.\n2. Tags must be EXACTLY [♪♫] and [/♪♫] — no dashes, no spaces, no variants.\n   WRONG: [- ♪♫] [-♪♫] [♪ ♫] [♪♫-] *action* (action)\n   CORRECT: [♪♫]他沉默了。[/♪♫]\n3. Each narration = '+_nMin+' to '+_nMax+' chars. Vary lengths.\n4. Narration describes YOUR actions/feelings/environment, never the user\'s.\n5. Spread narration throughout your reply, not clumped at one spot.\n\nExample of correct output:\n嗯...\n[♪♫]他低下头，手指无意识地敲着桌面。[/♪♫]\n那你想怎么办？\n[♪♫]窗外的雨声突然变大了。[/♪♫]\n...你还好吗？\n\nIf your reply contains ZERO [♪♫]...[/♪♫] tags, it is WRONG. Go back and add them.'});
+            apiMessages.push({role:'assistant',content:'明白，我会在回复中穿插 [♪♫]旁白[/♪♫] 标签。'});
+        }else{
+            apiMessages.push({role:'user',content:'[SYSTEM REMINDER — NARRATION MODE IS OFF]\n⛔ DO NOT output any narration, action descriptions, or stage directions.\n⛔ DO NOT use [♪♫]...[/♪♫] tags.\n⛔ DO NOT use *asterisks*, (parentheses), or any other action format.\n⛔ Every line you output must be pure spoken dialogue — words you literally say out loud.\n⛔ If you want to express emotion, use word choice and tone, NOT action descriptions.\nThis rule has ABSOLUTE priority. No other instruction overrides it.'});
+            apiMessages.push({role:'assistant',content:'好的，我只输出纯对话，不加任何旁白或动作描写。'});
+        }
+    })();
+
     // 规范化 endpoint
     var ep=endpoint.replace(/\/+$/,'');
     if(ep.indexOf('/chat/completions')===-1){
