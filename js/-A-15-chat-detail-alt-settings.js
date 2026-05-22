@@ -26,10 +26,14 @@ function loadApiConfig(){
 }
 function saveApiConfig(cfg){localStorage.setItem('ca-api-config',JSON.stringify(cfg));}
 
-function loadTimeConfig(){
-    try{return JSON.parse(localStorage.getItem('ca-time-config')||'{"on":false}');}catch(e){return{on:false};}
+function loadTimeConfig(entId){
+    var key=entId?'ca-time-config-'+entId:'ca-time-config';
+    try{return JSON.parse(localStorage.getItem(key)||'{"on":false}');}catch(e){return{on:false};}
 }
-function saveTimeConfig(cfg){localStorage.setItem('ca-time-config',JSON.stringify(cfg));}
+function saveTimeConfig(cfg,entId){
+    var key=entId?'ca-time-config-'+entId:'ca-time-config';
+    localStorage.setItem(key,JSON.stringify(cfg));
+}
 
 function loadWatermarkConfig(){
     try{return JSON.parse(localStorage.getItem('ca-watermark-config')||'{"text":"Story"}');}catch(e){return{text:"Story"};}
@@ -45,7 +49,7 @@ function renderSettings(entId){
     var apiConfig=loadApiConfig();
     var node=apiConfig.node||'primary';
     var cfg=apiConfig[node]||{};
-    var timeConfig=loadTimeConfig();
+    var timeConfig=loadTimeConfig(entId);
     var wmConfig=loadWatermarkConfig();
     var memRounds=parseInt(localStorage.getItem('ca-mem-rounds-14-'+entId)||localStorage.getItem('ca-mem-rounds-'+entId)||'30',10);
 
@@ -216,23 +220,23 @@ function renderSettings(entId){
                 '</div></div>'+
                 '</div></div>'+
             '</div>'+
-            '<div class="cs-acc"><div class="cs-acc-hd"><div class="cs-acc-icon"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="cs-acc-info"><div class="cs-acc-name">旁白模式</div><div class="cs-acc-desc">AI outputs narration between lines</div></div><div class="cs-toggle'+(JSON.parse(localStorage.getItem('ca-narration-config')||'{"on":false}').on?' on':'')+'" id="csNarrationToggle"></div><svg class="cs-acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>'+
+            '<div class="cs-acc"><div class="cs-acc-hd"><div class="cs-acc-icon"><svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div><div class="cs-acc-info"><div class="cs-acc-name">旁白模式</div><div class="cs-acc-desc">AI outputs narration between lines</div></div><div class="cs-toggle'+(JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{"on":false}').on?' on':'')+'" id="csNarrationToggle"></div><svg class="cs-acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>'+
                 '<div class="cs-acc-body"><div class="cs-acc-inner">'+
                 '<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:10px;">旁白样式 / Narration Style</div>'+
                 '<div class="cs-narr-grid" id="csNarrGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">'+
-                    (function(){var ns;try{ns=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(e){ns={};}var cur=ns.style||'a';var items=[{id:'a',name:'居中'},{id:'b',name:'竖线'},{id:'c',name:'卡片'},{id:'d',name:'极简'},{id:'e',name:'右签'},{id:'f',name:'破折'},{id:'g',name:'引用'},{id:'h',name:'等宽'},{id:'i',name:'音符'},{id:'j',name:'淡线'},{id:'k',name:'散文'},{id:'l',name:'圆点'},{id:'m',name:'暗色'},{id:'n',name:'手写'}];var h='';items.forEach(function(it){h+='<div class="cs-narr-item'+(cur===it.id?' active':'')+'" data-narr-style="'+it.id+'" style="padding:10px 6px;border-radius:10px;text-align:center;cursor:pointer;border:0.5px solid rgba(255,255,255,'+(cur===it.id?'0.3':'0.08')+');background:rgba(255,255,255,'+(cur===it.id?'0.1':'0.03')+');transition:all 0.2s;"><div style="font-size:10px;font-weight:700;color:'+(cur===it.id?'#fff':'rgba(255,255,255,0.5)')+';letter-spacing:0.3px;">'+it.name+'</div><div style="font-size:7px;color:rgba(255,255,255,0.25);margin-top:2px;text-transform:uppercase;">'+it.id.toUpperCase()+'</div></div>';});return h;})()+
+                    (function(){var ns;try{ns=JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}');}catch(e){ns={};}var cur=ns.style||'a';var items=[{id:'a',name:'居中'},{id:'b',name:'竖线'},{id:'c',name:'卡片'},{id:'d',name:'极简'},{id:'e',name:'右签'},{id:'f',name:'破折'},{id:'g',name:'引用'},{id:'h',name:'等宽'},{id:'i',name:'音符'},{id:'j',name:'淡线'},{id:'k',name:'散文'},{id:'l',name:'圆点'},{id:'m',name:'暗色'},{id:'n',name:'手写'}];var h='';items.forEach(function(it){h+='<div class="cs-narr-item'+(cur===it.id?' active':'')+'" data-narr-style="'+it.id+'" style="padding:10px 6px;border-radius:10px;text-align:center;cursor:pointer;border:0.5px solid rgba(255,255,255,'+(cur===it.id?'0.3':'0.08')+');background:rgba(255,255,255,'+(cur===it.id?'0.1':'0.03')+');transition:all 0.2s;"><div style="font-size:10px;font-weight:700;color:'+(cur===it.id?'#fff':'rgba(255,255,255,0.5)')+';letter-spacing:0.3px;">'+it.name+'</div><div style="font-size:7px;color:rgba(255,255,255,0.25);margin-top:2px;text-transform:uppercase;">'+it.id.toUpperCase()+'</div></div>';});return h;})()+
                 '</div>'+
                 '<div style="margin-top:16px;border-top:0.5px solid rgba(255,255,255,0.06);padding-top:14px;">'+
                     '<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:10px;">旁白字数范围 / Length Range</div>'+
                     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'+
                         '<span style="font-size:8px;color:rgba(255,255,255,0.25);flex-shrink:0;">短</span>'+
-                        '<input type="range" class="cs-slider" id="csNarrMinLen" min="2" max="50" step="1" value="'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config')||'{}').minLen||3;}catch(e){return 3;}})()+'" style="flex:1;">'+
-                        '<span id="csNarrMinVal" style="font-family:monospace;font-size:11px;color:#fff;min-width:20px;text-align:center;">'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config')||'{}').minLen||3;}catch(e){return 3;}})()+' 字</span>'+
+                        '<input type="range" class="cs-slider" id="csNarrMinLen" min="2" max="50" step="1" value="'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}').minLen||3;}catch(e){return 3;}})()+'" style="flex:1;">'+
+                        '<span id="csNarrMinVal" style="font-family:monospace;font-size:11px;color:#fff;min-width:20px;text-align:center;">'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}').minLen||3;}catch(e){return 3;}})()+' 字</span>'+
                     '</div>'+
                     '<div style="display:flex;align-items:center;gap:10px;">'+
                         '<span style="font-size:8px;color:rgba(255,255,255,0.25);flex-shrink:0;">长</span>'+
-                        '<input type="range" class="cs-slider" id="csNarrMaxLen" min="10" max="200" step="5" value="'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config')||'{}').maxLen||80;}catch(e){return 80;}})()+'" style="flex:1;">'+
-                        '<span id="csNarrMaxVal" style="font-family:monospace;font-size:11px;color:#fff;min-width:20px;text-align:center;">'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config')||'{}').maxLen||80;}catch(e){return 80;}})()+' 字</span>'+
+                        '<input type="range" class="cs-slider" id="csNarrMaxLen" min="10" max="200" step="5" value="'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}').maxLen||80;}catch(e){return 80;}})()+'" style="flex:1;">'+
+                        '<span id="csNarrMaxVal" style="font-family:monospace;font-size:11px;color:#fff;min-width:20px;text-align:center;">'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}').maxLen||80;}catch(e){return 80;}})()+' 字</span>'+
                     '</div>'+
                     '<div style="margin-top:8px;font-size:8px;color:rgba(255,255,255,0.2);line-height:1.5;">AI 每段旁白大约在此范围内波动，不是硬限制</div>'+
                 '</div>'+
@@ -240,9 +244,9 @@ function renderSettings(entId){
                     '<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:10px;">旁白字号 / Narration Font Size</div>'+
                     '<div style="display:flex;align-items:center;gap:10px;">'+
                         '<span style="font-size:8px;color:rgba(255,255,255,0.25);flex-shrink:0;">小</span>'+
-                        '<input type="range" class="cs-slider" id="csNarrFontSize" min="10" max="16" step="1" value="'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config')||'{}').fontSize||12;}catch(e){return 12;}})()+'" style="flex:1;">'+
+                        '<input type="range" class="cs-slider" id="csNarrFontSize" min="10" max="16" step="1" value="'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}').fontSize||12;}catch(e){return 12;}})()+'" style="flex:1;">'+
                         '<span style="font-size:8px;color:rgba(255,255,255,0.25);flex-shrink:0;">大</span>'+
-                        '<span id="csNarrFontSizeVal" style="font-family:monospace;font-size:11px;color:#fff;min-width:28px;text-align:center;">'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config')||'{}').fontSize||12;}catch(e){return 12;}})()+' px</span>'+
+                        '<span id="csNarrFontSizeVal" style="font-family:monospace;font-size:11px;color:#fff;min-width:28px;text-align:center;">'+(function(){try{return JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}').fontSize||12;}catch(e){return 12;}})()+' px</span>'+
                     '</div>'+
                 '</div>'+
                 '</div></div>'+
@@ -820,11 +824,10 @@ function bindSettingsEvents(entId){
     if(timeToggle){
         timeToggle.addEventListener('click',function(e){
             e.stopPropagation();
-            // toggle 的 on class 已经在通用 toggle handler 里切换了，这里直接读
             setTimeout(function(){
-                var tc=loadTimeConfig();
+                var tc=loadTimeConfig(entId);
                 tc.on=timeToggle.classList.contains('on');
-                saveTimeConfig(tc);
+                saveTimeConfig(tc,entId);
             },50);
         });
     }
@@ -834,7 +837,7 @@ function bindSettingsEvents(entId){
         timeCustomToggle.addEventListener('click',function(e){
             e.stopPropagation();
             setTimeout(function(){
-                var tc=loadTimeConfig();
+                var tc=loadTimeConfig(entId);
                 tc.custom=timeCustomToggle.classList.contains('on');
                 if(tc.custom){
                     tc.customMonth=parseInt(document.getElementById('csTcMonth').value)||new Date().getMonth()+1;
@@ -842,7 +845,7 @@ function bindSettingsEvents(entId){
                     tc.customHour=parseInt(document.getElementById('csTcHour').value)||0;
                     tc.customMin=parseInt(document.getElementById('csTcMin').value)||0;
                 }
-                saveTimeConfig(tc);
+                saveTimeConfig(tc,entId);
                 var inputs=document.getElementById('csTimeCustomInputs');
                 if(inputs)inputs.style.display=tc.custom?'block':'none';
             },50);
@@ -853,12 +856,12 @@ function bindSettingsEvents(entId){
         var inp=document.getElementById(id);
         if(inp){
             inp.addEventListener('input',function(){
-                var tc=loadTimeConfig();
+                var tc=loadTimeConfig(entId);
                 tc.customMonth=parseInt(document.getElementById('csTcMonth').value)||1;
                 tc.customDay=parseInt(document.getElementById('csTcDay').value)||1;
                 tc.customHour=parseInt(document.getElementById('csTcHour').value)||0;
                 tc.customMin=parseInt(document.getElementById('csTcMin').value)||0;
-                saveTimeConfig(tc);
+                saveTimeConfig(tc,entId);
             });
         }
     });
@@ -867,7 +870,7 @@ function bindSettingsEvents(entId){
     var clockEl=document.getElementById('csTimeClock');
     var clockTimer=setInterval(function(){
         if(!clockEl||!document.getElementById('cdaSettings'))return clearInterval(clockTimer);
-        var tc=loadTimeConfig();
+        var tc=loadTimeConfig(entId);
         var now=new Date();
         var mo=now.getMonth()+1,d=now.getDate(),h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
         if(tc.custom){
@@ -882,9 +885,9 @@ function bindSettingsEvents(entId){
         narrationToggle.addEventListener('click',function(e){
             e.stopPropagation();
             setTimeout(function(){
-                var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
+                var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
                 nc.on=narrationToggle.classList.contains('on');
-                localStorage.setItem('ca-narration-config',JSON.stringify(nc));
+                localStorage.setItem('ca-narration-config-'+entId,JSON.stringify(nc));
                 // 写入一条 info 通知到对话记录
                 if(settingsEntId){
                     if(!window._caConversations)window._caConversations={};
@@ -917,9 +920,9 @@ function bindSettingsEvents(entId){
                 item.style.borderColor='rgba(255,255,255,0.3)';
                 item.style.background='rgba(255,255,255,0.1)';
                 item.querySelector('div').style.color='#fff';
-                var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
+                var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
                 nc.style=item.dataset.narrStyle;
-                localStorage.setItem('ca-narration-config',JSON.stringify(nc));
+                localStorage.setItem('ca-narration-config-'+entId,JSON.stringify(nc));
                 window.dispatchEvent(new CustomEvent('cda-settings-changed'));
             });
         });
@@ -934,18 +937,18 @@ function bindSettingsEvents(entId){
         narrMinSlider.addEventListener('input',function(){
             var v=parseInt(narrMinSlider.value,10);
             if(narrMinVal)narrMinVal.textContent=v+' 字';
-            var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
+            var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
             nc.minLen=v;
-            localStorage.setItem('ca-narration-config',JSON.stringify(nc));
+            localStorage.setItem('ca-narration-config-'+entId,JSON.stringify(nc));
         });
     }
     if(narrMaxSlider){
         narrMaxSlider.addEventListener('input',function(){
             var v=parseInt(narrMaxSlider.value,10);
             if(narrMaxVal)narrMaxVal.textContent=v+' 字';
-            var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
+            var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
             nc.maxLen=v;
-            localStorage.setItem('ca-narration-config',JSON.stringify(nc));
+            localStorage.setItem('ca-narration-config-'+entId,JSON.stringify(nc));
         });
     }
 
@@ -956,9 +959,9 @@ function bindSettingsEvents(entId){
         narrFontSlider.addEventListener('input',function(){
             var v=parseInt(narrFontSlider.value,10);
             if(narrFontVal)narrFontVal.textContent=v+' px';
-            var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
+            var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}');}catch(ex){nc={};}
             nc.fontSize=v;
-            localStorage.setItem('ca-narration-config',JSON.stringify(nc));
+            localStorage.setItem('ca-narration-config-'+entId,JSON.stringify(nc));
             applyNarrFontSize(v);
         });
     }
@@ -973,7 +976,7 @@ function bindSettingsEvents(entId){
         document.head.appendChild(s);
     }
     // 初始应用
-    (function(){var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}if(nc.fontSize)applyNarrFontSize(nc.fontSize);})();
+    (function(){var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}if(nc.fontSize)applyNarrFontSize(nc.fontSize);})();
 
     // 见面邀请
     var inviteToggle=document.getElementById('csInviteToggle');

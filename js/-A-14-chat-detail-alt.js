@@ -1132,7 +1132,7 @@ function doRenderMessages(area,ent){
                 parts.forEach(function(p,pi){
                     if(p.type==='narr'){
                         var _nsClass='';
-                        try{var _nc2=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');if(_nc2.style&&_nc2.style!=='a')_nsClass=' ns-'+_nc2.style;}catch(ex2){}
+                        try{var _nc2=JSON.parse(localStorage.getItem('ca-narration-config-'+currentEntId)||localStorage.getItem('ca-narration-config')||'{}');if(_nc2.style&&_nc2.style!=='a')_nsClass=' ns-'+_nc2.style;}catch(ex2){}
                         html+='<div class="cda-narr-line'+_nsClass+'" data-msg-idx="'+b.msgIdx+'" data-line-idx="'+(_narrLineCount++)+'">'+escapeHtml(applyFilter(p.content,'narr'))+'</div>';
                     }else if(p.content){
                         var pIsLast=(pi===parts.length-1)||(pi===parts.length-2&&parts[parts.length-1].type==='narr');
@@ -1229,7 +1229,7 @@ function addUserMsg(text){
     var sendText=text;
     var isSpecial=text.indexOf('[IMAGE]')===0||text.indexOf('[TRANSFER_CARD::')===0;
     var timeConfig;
-    try{timeConfig=JSON.parse(localStorage.getItem('ca-time-config')||'{"on":false}');}catch(e){timeConfig={on:false};}
+    try{timeConfig=JSON.parse(localStorage.getItem('ca-time-config-'+currentEntId)||localStorage.getItem('ca-time-config')||'{"on":false}');}catch(e){timeConfig={on:false};}
     if(timeConfig.on&&!isSpecial){
         var _now=new Date();
         var _mo=timeConfig.custom&&timeConfig.customMonth?timeConfig.customMonth:_now.getMonth()+1;
@@ -1595,7 +1595,7 @@ function appendAiBubbles(fullText,callback){
 
     // 解析旁白
     var narrConfig;
-    try{narrConfig=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(e){narrConfig={};}
+    try{narrConfig=JSON.parse(localStorage.getItem('ca-narration-config-'+currentEntId)||localStorage.getItem('ca-narration-config')||'{}');}catch(e){narrConfig={};}
 
     // 拆分成段落（普通文本 + 旁白）
     var segments=[];
@@ -1969,7 +1969,7 @@ function triggerAI(){
     // 时间感知（与旧系统共用 ca-time-config）
     var timeInject='';
     var timeConfig;
-    try{timeConfig=JSON.parse(localStorage.getItem('ca-time-config')||'{"on":false}');}catch(e){timeConfig={on:false};}
+    try{timeConfig=JSON.parse(localStorage.getItem('ca-time-config-'+currentEntId)||localStorage.getItem('ca-time-config')||'{"on":false}');}catch(e){timeConfig={on:false};}
     if(timeConfig.on){
         var _now=new Date();
         var _mo=timeConfig.custom&&timeConfig.customMonth?timeConfig.customMonth:_now.getMonth()+1;
@@ -1994,16 +1994,21 @@ function triggerAI(){
         else if(_hr>=22||_hr<1)_timeOfDay='深夜';
         else _timeOfDay='凌晨';
 
-        timeInject='\n\n[CURRENT TIME: '+_mo+'月'+_day+'日 '+String(_hr).padStart(2,'0')+':'+String(_mn).padStart(2,'0')+':'+String(_sc).padStart(2,'0')+' · '+_timeOfDay+']\n'+
-            '你清楚地知道现在是 '+_timeOfDay+' '+String(_hr).padStart(2,'0')+':'+String(_mn).padStart(2,'0')+'。\n'+
-            '时间感知规则：\n'+
-            '- 你的状态、语气、行为应该自然匹配当前时段（例如深夜可能困倦/慵懒，清晨可能刚醒）。\n'+
-            '- 用户消息前的 [SYS_TIME:...] 是系统自动附加的时间戳。你必须阅读并理解这个时间（它告诉你用户是什么时候发的这条消息），但不要在回复中提及这个标签本身。\n'+
-            '- 你要根据用户发消息的时间来感知对话节奏（比如用户凌晨3点发消息，你可以表现出"你怎么还没睡"的反应）。\n'+
-            '- 不要机械地报时或说"现在是X点"，而是通过行为、语气、提到的活动来自然体现时间感。\n'+
-            '- 严禁在回复中输出 [CURRENT TIME]、[SYS_TIME] 等系统标签格式。';
+        timeInject='\n\n[⚠ TIME AWARENESS — MANDATORY]\n[CURRENT TIME: '+_mo+'月'+_day+'日 '+String(_hr).padStart(2,'0')+':'+String(_mn).padStart(2,'0')+':'+String(_sc).padStart(2,'0')+' · '+_timeOfDay+']\n\n'+
+            '你此刻正身处 '+_timeOfDay+'（'+String(_hr).padStart(2,'0')+':'+String(_mn).padStart(2,'0')+'）。这不是背景信息，这是你当下的真实体验。\n\n'+
+            '【强制时间行为规则 — 违反即视为出戏】\n'+
+            '1. 你的身体状态必须匹配时间：深夜→困/想睡/声音低沉；清晨→刚醒/迷糊/揉眼；中午→饿/想吃饭；下午→犯困/摸鱼。\n'+
+            '2. 你的活动必须匹配时间：凌晨3点不可能"刚从外面回来"；早上7点不可能"刚吃完晚饭"。\n'+
+            '3. 你必须对用户发消息的时间有反应：\n'+
+            '   - 凌晨2-5点发消息 → "你怎么还没睡？" / "这么晚还醒着？"\n'+
+            '   - 早上6-8点发消息 → "这么早？" / "你比我还早"\n'+
+            '   - 工作时间发消息 → "你不用上班/上课吗？"\n'+
+            '4. [SYS_TIME:...] 是用户消息的发送时间戳。你必须读取它来感知对话节奏，但绝对不要在回复中提及这个标签。\n'+
+            '5. 不要机械报时。通过行为、语气、提到的活动来自然体现。\n'+
+            '6. 严禁输出 [CURRENT TIME]、[SYS_TIME] 等系统标签。\n'+
+            '7. 如果时间是深夜但你在对话中表现得精神抖擞，这就是出戏。你必须体现疲惫。';
 
-        // 计算距离上一条消息的时间差
+        // 计算距离上一条消息的时间差（取最后一条 assistant 消息的时间，表示"你上次发消息是什么时候"）
         var lastMsgTime=null;
         for(var ti=msgs.length-1;ti>=0;ti--){
             if(msgs[ti].time&&(msgs[ti].role==='user'||msgs[ti].role==='assistant')){
@@ -2027,17 +2032,23 @@ function triggerAI(){
                 else if(diffMin<1440)gapText='约'+Math.floor(diffMin/60)+'小时前';
                 else gapText='约'+Math.floor(diffMin/1440)+'天前';
 
-                timeInject+='\n[TIME GAP: 距离上一条消息已过去 '+gapText+']\n';
+                timeInject+='\n\n[TIME GAP: 距离上一条消息已过去 '+gapText+'（'+diffMin+' 分钟）]\n';
                 if(diffMin<3){
-                    timeInject+='间隔极短，正常连续聊天即可。';
+                    timeInject+='间隔极短，正常连续聊天即可。不需要特别反应。';
                 }else if(diffMin<30){
-                    timeInject+='间隔较短，可以自然衔接之前的话题。';
+                    timeInject+='间隔较短，可以自然衔接之前的话题。不需要特别提及时间。';
                 }else if(diffMin<120){
-                    timeInject+='有一定间隔，可以自然地提一句（比如"刚忙完""回来了"等），但不要刻意。';
+                    timeInject+='有一定间隔。你这段时间在做自己的事。回复时可以自然带一句你刚才在做什么（比如"刚洗完澡""刚吃完饭""刚忙完"等）。但不要刻意，要像真人一样随口一提。';
                 }else if(diffMin<1440){
-                    timeInject+='间隔较长（几小时），你应该自然体现这段时间你在做自己的事。可以主动分享你这段时间做了什么，或关心对方去哪了、在忙什么。不要假装一直在等。';
+                    timeInject+='间隔很长（'+Math.floor(diffMin/60)+'小时）！这段时间你有自己的生活。你必须在回复中自然体现这段时间的流逝：\n'+
+                        '- 主动说一句你这几个小时做了什么（吃饭/睡觉/出门/工作/追剧等，要符合当前时段）\n'+
+                        '- 或者关心对方去哪了、在忙什么\n'+
+                        '- 绝对不要表现得像一直在等消息。你有自己的生活。';
                 }else{
-                    timeInject+='间隔很长（超过一天），你们有一段时间没聊了。重新开始对话时应该有相应的情感反应（想念、好奇对方近况等），但要符合你的性格。';
+                    timeInject+='间隔超过一天（'+Math.floor(diffMin/1440)+'天）！你们已经很久没聊了。你必须有明显的情感反应：\n'+
+                        '- 表达想念、好奇对方近况、或者小小的抱怨"你怎么都不理我"\n'+
+                        '- 要符合你的性格和关系亲密度\n'+
+                        '- 同时分享你这段时间的生活片段';
                 }
             }
         }
@@ -2083,7 +2094,7 @@ function triggerAI(){
         _coreBehavior+customPrompt+transPrompt+
         (wbAfter?'\n'+wbAfter+'\n':'')+
         maskPrompt+
-        (function(){var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}if(!nc.on)return '';var _nMin=nc.minLen||3;var _nMax=nc.maxLen||80;return '\nNARRATION MODE (IMPORTANT):\nYou can include narration/action descriptions between your dialogue. Use the tag [♪♫]narration text[/♪♫] to wrap any physical actions, environmental descriptions, or internal thoughts.\nExample output (each line is one bubble):\n嗯...\n[♪♫]他低下头，手指无意识地敲着桌面。[/♪♫]\n那你想怎么办？\n[♪♫]窗外的雨声突然变大了。[/♪♫]\n...你还好吗？\nIMPORTANT: The tags must be EXACTLY [♪♫] and [/♪♫] with NO extra characters, NO dashes, NO spaces inside the brackets. Wrong: [- ♪♫], [-♪♫], [♪♫ -]. Correct: [♪♫]text[/♪♫]\n\nRules:\n- Each narration segment should be roughly '+_nMin+' to '+_nMax+' characters long. Vary naturally within this range.\n- Short narration examples (near min): 沉默。/ 他笑了。/ 雨停了。\n- Long narration (near max): describe environment, micro-expressions, body language, atmosphere.\n- Do NOT make every narration the same length. Rhythm matters. Mix short and long freely.\n- Narration describes what the CHARACTER does/feels/the environment, not the user.\n- Write narration in the same language as the conversation.\n- The [♪♫] tags are invisible to the user, they just see elegant italic text.\n- Not every message needs narration. Use it when it adds atmosphere or emotion.\n\n';})()+
+        (function(){var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+currentEntId)||localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}if(!nc.on)return '';var _nMin=nc.minLen||3;var _nMax=nc.maxLen||80;return '\n[NARRATION MODE — MANDATORY SYSTEM RULE]\nYou MUST include narration/action descriptions between your dialogue lines. This is NOT optional. Every reply MUST contain at least 1-3 narration segments.\nUse EXACTLY these tags: [♪♫]narration text[/♪♫]\n\nExample output (each line is one bubble):\n嗯...\n[♪♫]他低下头，手指无意识地敲着桌面。[/♪♫]\n那你想怎么办？\n[♪♫]窗外的雨声突然变大了。[/♪♫]\n...你还好吗？\n\nCRITICAL FORMAT RULES:\n- Tags must be EXACTLY [♪♫] and [/♪♫] — NO dashes, NO spaces, NO extra characters inside brackets\n- WRONG: [- ♪♫], [-♪♫], [♪♫ -], [♪ ♫], [ ♪♫]\n- CORRECT: [♪♫]text[/♪♫]\n\nNarration Rules:\n- Each segment: '+_nMin+' to '+_nMax+' characters. Vary naturally.\n- Narration describes what the CHARACTER does/feels/environment, NOT the user.\n- Write narration in the same language as the conversation.\n- Mix short (沉默。/ 他笑了。) and long (environment, micro-expressions, body language).\n- If you forget narration tags, your response is INVALID. Always include them.\n\n';})()+
         '\nRespond naturally. Use the same language as the user.\n'+
         'MESSAGE FORMAT: You are chatting in a messaging app. Split your reply into multiple short messages using line breaks (newlines). Each line = one chat bubble. Do NOT send everything in one block. Keep each line short and natural, like real texting.\n'+
         '\nTRANSFER CARD SYSTEM — READ CAREFULLY:\n'+
@@ -2210,9 +2221,11 @@ function triggerAI(){
         if(m.role==='user'){
             // 不清理 SYS_TIME，让 AI 感知时间
         }
-        // 清理 AI 回复中可能残留的系统标签
-        _cleanText=_cleanText.replace(/\[CURRENT TIME[^\]]*\]/gi,'');
-        _cleanText=_cleanText.replace(/\[SYS_TIME[^\]]*\]/gi,'');
+        // 清理 AI 回复中可能残留的系统标签（仅清理 assistant 消息中的标签）
+        if(m.role==='assistant'){
+            _cleanText=_cleanText.replace(/\[CURRENT TIME[^\]]*\]/gi,'');
+            _cleanText=_cleanText.replace(/\[SYS_TIME[^\]]*\]/gi,'');
+        }
         _cleanText=_cleanText.replace(/\[SET_USER_NICKNAME:[^\]]*\]/gi,'');
         _cleanText=_cleanText.replace(/\[INVITE_MEET:[^\]]*\]/gi,'');
         _cleanText=_cleanText.trim();
@@ -2264,12 +2277,12 @@ function triggerAI(){
         }
 
         // 旁白模式提醒
-        var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}
+        var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+currentEntId)||localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}
         if(nc.on){
             var _nMin=nc.minLen||3;var _nMax=nc.maxLen||80;
-            _tailReminders.push('[NARRATION ON] You MUST include [♪♫]narration[/♪♫] tags in your reply. Tags exactly: [♪♫] and [/♪♫]. No dashes/spaces. '+_nMin+'-'+_nMax+' chars each. At least 1-2 segments interspersed with dialogue.');
+            _tailReminders.push('[⚠ NARRATION MANDATORY] You MUST include [♪♫]narration[/♪♫] tags in your reply. This is a HARD REQUIREMENT — replies without narration tags are REJECTED.\n- Tags exactly: [♪♫] and [/♪♫]. No dashes, no spaces, no variations.\n- '+_nMin+'-'+_nMax+' chars each segment. At least 1-3 narration segments per reply.\n- Narration goes BETWEEN dialogue lines, describing actions/emotions/environment.\n- DO NOT skip this. DO NOT forget. CHECK before sending.');
         }else{
-            _tailReminders.push('[NARRATION OFF] Do NOT output any [♪♫] tags, *actions*, or (descriptions). Pure dialogue only.');
+            _tailReminders.push('[⚠ NARRATION STRICTLY FORBIDDEN] You are ABSOLUTELY PROHIBITED from outputting any [♪♫] tags, any *asterisk actions*, any (parenthetical descriptions), or any narration/action text of any kind. Your reply must be PURE DIALOGUE ONLY — nothing but spoken words. Any non-dialogue content will be rejected. This is non-negotiable.');
         }
 
         // 合并为一条 system 消息插入到末尾（不破坏 user/assistant 交替结构）
@@ -2855,7 +2868,7 @@ function render(entId){
         var styleId='cda-narr-fontsize-style';
         var existing=document.getElementById(styleId);
         if(existing)existing.parentNode.removeChild(existing);
-        var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}
+        var nc;try{nc=JSON.parse(localStorage.getItem('ca-narration-config-'+entId)||localStorage.getItem('ca-narration-config')||'{}');}catch(e){nc={};}
         if(nc.fontSize){
             var s=document.createElement('style');s.id=styleId;
             s.textContent='.cda-narr-line{font-size:'+nc.fontSize+'px!important;}';
