@@ -2103,7 +2103,7 @@ function getAnimClass(animName,type){
 }
 
 function animateBubbleIn(row,keyframe){
-    var target=row.querySelector('.cda-bubble-wrap')||row;
+    var target=row.querySelector('.cda-bubble')||row.querySelector('.cda-bubble-wrap')||row;
     target.style.opacity='0';
     target.style.transform='translateY(12px) scale(0.97)';
     setTimeout(function(){
